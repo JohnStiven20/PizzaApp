@@ -1,13 +1,18 @@
-package app;
+package app.Modelo;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import app.Customer.Cliente;
+import app.Pedido.LineaPedido;
+import app.Pedido.Pedido;
 
 public class ControladorCliente {
 
     private List<Cliente> listaClientes;
+    private List<Pedido> listaPedidos;
+    private static Pedido pedido;
+    
 
     public ControladorCliente() {
         this.listaClientes = new ArrayList<>();
@@ -52,7 +57,13 @@ public class ControladorCliente {
         return false;
     }
 
-    // public void agregarLineaPedido(Lien) {
+    public void agregarLineaPedido(int cantidad, LineaPedido lineaPedido) {
+        pedido.agregarLineaPedido(lineaPedido);
 
-    // } 
+        /* 
+         * 
+         *  Insert Into( ) 
+         * 
+         */
+    } 
 }
