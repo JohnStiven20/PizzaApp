@@ -4,34 +4,31 @@ import java.util.ArrayList;
 import java.util.List;
 
 import app.Customer.Cliente;
-import app.Pedido.LineaPedido;
 import app.Pedido.Pedido;
 
 public class ControladorCliente {
 
     private List<Cliente> listaClientes;
-    private List<Pedido> listaPedidos;
     private static Pedido pedido;
-    
+    private Cliente clienteActual;
 
     public ControladorCliente() {
         this.listaClientes = new ArrayList<>();
     }
 
-    
-
     public boolean registradorCliente(int id, String dni, String nombre, String direccion, String telefono, String email, String password) {
 
-        Cliente cliente = new Cliente(id, dni, nombre, telefono, email, password);
+        this.clienteActual = new Cliente(id, dni, nombre, telefono, email, password);
 
-        if (cliente.getDni() != null) {
+        if (this.clienteActual.getDni() == null) {
             return false;
-        } else if (cliente.getNombre() != null) {
+        } else if (this.clienteActual.getNombre() == null) {
             return false;
-        } else if (cliente.getPassword() != null) {
+        } else if (this.clienteActual.getPassword() == null) {
             return false;
         }
 
+        listaClientes.add(clienteActual);
         return true;
     }
 
@@ -40,15 +37,19 @@ public class ControladorCliente {
         int contador = 0;
 
         for (Cliente cliente : listaClientes) {
+
             if (cliente.getDni().equals(dni)) {
                 contador++;
-            } else if (cliente.getNombre().equals(nombre)) {
-                contador++;
-            } else if (cliente.getPassword().equals(password)) {
+            }
+            if (cliente.getNombre().equals(nombre)) {
                 contador++;
             }
-
-            if (contador == 3) {
+    
+            if (cliente.getPassword().equals(password)) {
+                contador++;
+            }
+            
+             if (contador == 3) {
                 return true;
             }
             contador = 0;
@@ -57,13 +58,6 @@ public class ControladorCliente {
         return false;
     }
 
-    public void agregarLineaPedido(int cantidad, LineaPedido lineaPedido) {
-        pedido.agregarLineaPedido(lineaPedido);
 
-        /* 
-         * 
-         *  Insert Into( ) 
-         * 
-         */
-    } 
+    
 }
