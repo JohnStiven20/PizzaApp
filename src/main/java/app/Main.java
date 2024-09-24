@@ -1,7 +1,7 @@
 package app;
 
-import app.Modelo.ContraladorPedido;
-import app.Modelo.ControladorCliente;
+import app.Controladores.ContraladorPedido;
+import app.Controladores.ControladorCliente;
 
 public class Main {
 
