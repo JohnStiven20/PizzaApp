@@ -1,10 +1,5 @@
 package app.Modelo.Pedido;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import app.Modelo.Producto.Ingrediente;
-import app.Modelo.Producto.Pasta;
 import app.Modelo.Producto.Producto;
 
 
@@ -48,11 +43,5 @@ public class LineaPedido {
         return producto;
     }
 
-    public static void main(String[] args) {
-
-        List<Ingrediente> list = new ArrayList<>();
-        
-        LineaPedido lineaPedido = new LineaPedido(contador, new Pasta("nombre", contador, list));
-    }
-
+    
 }
