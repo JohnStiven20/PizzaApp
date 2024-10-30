@@ -1,37 +1,94 @@
 package app.Controladores;
 
-import java.util.List;
-
-import app.Modelo.Enums.Size;
-import app.Modelo.Pedido.LineaPedido;
-import app.Modelo.Pedido.Pedido;
+import app.Modelo.Cliente;
+import app.Modelo.Interfaces.Pagable;
+import app.Modelo.LineaPedido;
+import app.Modelo.Pedido;
+import app.Modelo.Pedido.EstadoPedido;
+import app.Modelo.Producto;
 
 public class ContraladorPedido {
 
+    private static Pedido pedido;
+    private static Cliente cliente;
 
-    private Pedido pedido;
-    private List<LineaPedido> listaLienaPedidos;
-
-    public  void  agregarLineaPedidoo(int cantidad, String nombre, double precio, Size size) {
-        
+    public ContraladorPedido(Cliente usuario) {
+        cliente = usuario;
     }
 
-    public  void  agregarLineaPedidoo(int cantidad, String nombre, double precio) {
-        
+    public void finalizarPedido(Pagable pagable) throws Exception {
+        if (cliente != null) {
+            if (pedido != null) {
+                pedido.setEstado(EstadoPedido.ENTREGADO);
+                System.out.println(pedido.getEstado());
+                pagable.pagar(pedido.getPrecioTotal());
+            } else {
+                throw new Exception("No hay pedido");
+            }
+        } else {
+            throw new Exception("No hay usuario o se ha deslogeado");
+        }
     }
 
-    public void finalizarPedido() {
-        
+    public void entregarPedido() throws Exception {
+        if (cliente != null) {
+            if (pedido != null) {
+                pedido.setEstado(EstadoPedido.ENTREGADO);
+                System.out.println(pedido.getEstado());
+            } else {
+                throw new Exception("No hay pedido");
+            }
+        } else {
+            throw new Exception("No hay usuario o se ha deslogeado");
+
+        }
     }
 
+    public void cancelarPedido() throws Exception {
 
-    public void  entregarPedido() {
-
-        
+        if (cliente != null) {
+            if (pedido != null) {
+                pedido.setEstado(EstadoPedido.CANCELADO);
+                System.out.println(pedido.getEstado());
+            } else {
+                throw new Exception("No hay pedido");
+            }
+        } else {
+            throw new Exception("No hay usuario o se ha deslogeado");
+        }
     }
 
-    public void cancelarPedido(){
+    public void agregarLineaPedido(int cantidad, Producto producto) throws Exception {
 
+        if (cliente != null) {
+            if (pedido == null) {
+                pedido = new Pedido(EstadoPedido.PEDIENTE);
+                pedido.agregarLineaPedido(new LineaPedido(cantidad, producto));
+
+            } else {
+                throw new Exception("No hay pedido");
+            }
+        } else {
+            throw new Exception("No hay usuario o se ha deslogeado");
+        }
     }
-    
+
+    public void recorrerListaLineasPedidos() throws Exception {
+
+        if (cliente != null) {
+            if (pedido != null) {
+                pedido.getLineaPedidos().forEach(lineas -> System.out.println(lineas));
+            } else {
+                throw new Exception("No hay pedido");
+            }
+        } else {
+            throw new Exception("No hay usuario o se ha deslogeado");
+
+        }
+    }
+
+    public Pedido getPedido() {
+        return pedido;
+    }
+
 }
