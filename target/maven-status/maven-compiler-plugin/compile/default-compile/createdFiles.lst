@@ -1,10 +1,8 @@
 app\Modelo\ClientesWrap.class
 app\Modelo\Pedido.class
-app\Modelo\GestionBasicaFicheros.class
 app\Modelo\Pedido$EstadoPedido.class
 app\Modelo\Cliente.class
 app\Controladores\ContraladorPedido.class
-app\Controladores\ControladorIngrediente.class
 app\Modelo\Ingrediente.class
 app\Modelo\LineaPedido.class
 app\Modelo\Pasta.class

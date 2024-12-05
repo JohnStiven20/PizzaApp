@@ -22,8 +22,8 @@ public class ControladorCliente {
         clienteDao = new JdbcClienteDao();
     }
 
-    public void save(Cliente cliente) throws SQLException {
-        clienteDao.save(cliente);
+    public boolean  save(Cliente cliente) throws SQLException {
+        return  clienteDao.save(cliente);
     }
 
     public Cliente findByEmail(String email) throws SQLException {

@@ -14,9 +14,9 @@ public interface PedidoDao {
 
     void save(Pedido pedido) throws SQLException ;
 
-    void delete(Pedido pedido) throws SQLException;
+    boolean delete(Pedido pedido) throws SQLException;
 
-    void update(Pedido pedido, EstadoPedido estadoPedido, Pagable pagable) throws SQLException;
+    void update(Pedido pedido, EstadoPedido estadoPedido) throws SQLException;
 
     List<Pedido> getOrdersByCustumer(Cliente cliente) throws SQLException;
 

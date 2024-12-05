@@ -16,12 +16,12 @@ public class ControladorProducto {
         this.productoDao = new JbcProductoDao();
     }
 
-    public void save(Producto producto) throws SQLException {
-        productoDao.save(producto);
+    public boolean  save(Producto producto) throws SQLException {
+       return productoDao.save(producto);
     }
 
-    public void delete(Producto producto) throws SQLException {
-        productoDao.delete(producto);
+    public boolean delete(Producto producto) throws SQLException {
+       return  productoDao.delete(producto);
     }
 
     /**
@@ -36,15 +36,15 @@ public class ControladorProducto {
     }
 
     public List<Ingrediente> getIngredientsByProduct(Producto producto) throws SQLException{
-        return productoDao.getIngredientsByProduct(producto);
+        return productoDao.findByProduct(producto);
     }
 
     public List<String> getAlergenosByIngredient(Ingrediente ingrediente) throws SQLException {
-        return productoDao.getAlergonosbyIngredient(ingrediente);
+        return productoDao.findbyIngrediente(ingrediente);
     }
 
-    public void  catalogoProductos() throws SQLException{
-        productoDao.getAllProducts().forEach(x -> System.out.println(x));
+    public List<Producto>  catalogoProductos() throws SQLException{
+        return  productoDao.getAllProducts();
     }
 
 }

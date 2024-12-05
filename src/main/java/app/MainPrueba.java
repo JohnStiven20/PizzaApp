@@ -15,7 +15,7 @@ public class MainPrueba {
 
 
         try {
-            DatabaseConfPizzeria.dropTlables();
+            DatabaseConfPizzeria.dropTables();
             DatabaseConfPizzeria.createTable();
         } catch (SQLException e) {
             System.out.println(e.getMessage());

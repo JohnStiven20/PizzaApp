@@ -21,6 +21,10 @@ public class ContraladorPedido {
         pedidoDao = new JbcPedidoDao();
     }
 
+    public boolean delete(Pedido pedido) throws SQLException {
+        return pedidoDao.delete(pedido);
+    }
+
     public void save(Pedido pedido) throws SQLException {
         pedidoDao.save(pedido);
     }
@@ -60,16 +64,17 @@ public class ContraladorPedido {
     public void finalizarPedido(Pagable metodoPago, Cliente cliente) throws SQLException {
         Pedido pedido = pedidoDao.getOrdersByStatus(EstadoPedido.PEDIENTE, cliente).stream().findFirst().get();
         pedido.setEstado(EstadoPedido.ENTREGADO);
-        pedidoDao.update(pedido, EstadoPedido.ENTREGADO, metodoPago);
+        pedido.setPagable(metodoPago);
+        pedidoDao.update(pedido, EstadoPedido.ENTREGADO);
     }
 
     public void cancelarPedido(Cliente cliente) throws SQLException {
         Pedido pedido = pedidoDao.getOrdersByStatus(EstadoPedido.PEDIENTE, cliente).stream().findFirst().get();
-        pedidoDao.update(pedido, EstadoPedido.CANCELADO, null);
+        pedidoDao.update(pedido, EstadoPedido.CANCELADO);
     }
 
-    public void entregarPedido(int pedido_id) throws SQLException {
-        Pedido pedido = new Pedido(pedido_id, null, null, null, null);
-        pedidoDao.update(pedido, EstadoPedido.ENTREGADO, null);
+    public void entregarPedido(Cliente cliente) throws SQLException {
+        Pedido pedido = pedidoDao.getOrdersByStatus(EstadoPedido.PEDIENTE, cliente).stream().findFirst().get();
+        pedidoDao.update(pedido, EstadoPedido.ENTREGADO);
     }
 }

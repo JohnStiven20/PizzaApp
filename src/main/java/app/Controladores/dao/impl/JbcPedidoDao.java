@@ -10,21 +10,18 @@ import java.util.Date;
 import java.util.List;
 
 import app.Controladores.dao.PedidoDao;
-import app.Interfaces.Pagable;
 import app.MetodosPagos.PagarEfectivo;
 import app.MetodosPagos.PagarTarjeta;
 import app.Modelo.Cliente;
-import app.Modelo.Ingrediente;
 import app.Modelo.LineaPedido;
 import app.Modelo.Pedido;
 import app.Modelo.Pedido.EstadoPedido;
 import app.Modelo.Producto;
 
-import static app.Modelo.utils.DatabaseConfPizzeria.INSERT_ALOGENO;
+import static app.Modelo.utils.DatabaseConfPizzeria.DELETE_PEDIDO;
 import static app.Modelo.utils.DatabaseConfPizzeria.INSERT_LINEA_PEDIDO;
 import static app.Modelo.utils.DatabaseConfPizzeria.INSERT_PEDIDO;
-import static app.Modelo.utils.DatabaseConfPizzeria.SELECT_ALOGENO_MEDIANTE_ID;
-import static app.Modelo.utils.DatabaseConfPizzeria.SELECT_ALOGENO_MEDIANTE_NOMBRE;
+
 import static app.Modelo.utils.DatabaseConfPizzeria.SELECT_PEDIDO_MEDIANTE_CLIENTE_ID;
 import static app.Modelo.utils.DatabaseConfPizzeria.SELECT_PEDIDO_MEDIANTE_ESTADO_PEDIDO_NUEVO;
 import static app.Modelo.utils.DatabaseConfPizzeria.UPDATE_PEDIDO_ENTREGADO;
@@ -43,7 +40,8 @@ public class JbcPedidoDao implements PedidoDao {
 
             int id = 0;
 
-            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PEDIDO,Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PEDIDO,
+                    Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setDate(1, new java.sql.Date(pedido.getFecha().getTime()));
             preparedStatement.setString(2, pedido.getEstado().name());
             preparedStatement.setInt(3, pedido.getCliente().getId());
@@ -56,38 +54,53 @@ public class JbcPedidoDao implements PedidoDao {
             }
 
             for (int i = 0; i < pedido.getLineaPedidos().size(); i++) {
-                saveOrderLine(pedido.getLineaPedidos().get(i), connection, id, pedido.getLineaPedidos().get(i).getProducto().getId());
+                saveOrderLine(pedido.getLineaPedidos().get(i), connection, id,
+                        pedido.getLineaPedidos().get(i).getProducto().getId());
             }
 
         } catch (SQLException e) {
-             if (connection != null) {
+            if (connection != null) {
                 connection.rollback();
-             }
+            }
             throw new SQLException(e.getMessage());
         }
     }
 
     @Override
-    public void delete(Pedido pedido) throws SQLException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'delete'");
+    public boolean delete(Pedido pedido) throws SQLException {
+        
+        boolean eliminado = false;
+
+        try (Connection conexion = getConnection()) {
+           
+            PreparedStatement declaracionPreparada = conexion.prepareStatement(DELETE_PEDIDO);
+            declaracionPreparada.setInt(1, pedido.getId()); 
+
+            int filasAfectadas = declaracionPreparada.executeUpdate();
+
+            if (filasAfectadas > 0) {
+                eliminado = true;
+            }
+        }
+
+        return eliminado; 
     }
 
     @Override
-    public  void update(Pedido pedido, EstadoPedido estadoPedido, Pagable pagable) throws SQLException {
-        
+    public void update(Pedido pedido, EstadoPedido estadoPedido) throws SQLException {
+
         try (Connection connection = getConnection()) {
 
             PreparedStatement preparableStatement = connection.prepareStatement(UPDATE_PEDIDO_ENTREGADO);
             preparableStatement.setString(1, estadoPedido.name());
 
-            if (pagable == null) {
-                preparableStatement.setString(2, "null");
-            } else if (pagable instanceof PagarEfectivo) {
+            if (pedido.getPagable() == null) {
+                preparableStatement.setString(2, null);
+            } else if (pedido.getPagable() instanceof PagarEfectivo) {
                 preparableStatement.setString(2, "EFECTIVO");
-            } else if (pagable instanceof PagarTarjeta) {
+            } else if (pedido.getPagable() instanceof PagarTarjeta) {
                 preparableStatement.setString(2, "TARJETA");
-            } 
+            }
 
             preparableStatement.setInt(3, pedido.getId());
             preparableStatement.executeUpdate();
@@ -99,38 +112,37 @@ public class JbcPedidoDao implements PedidoDao {
     public List<Pedido> getOrdersByCustumer(Cliente cliente) throws SQLException {
 
         Connection connection = getConnection();
-        List<Pedido> pedidos  = new ArrayList<>();
+        List<Pedido> pedidos = new ArrayList<>();
 
         try {
 
             PreparedStatement preparableStatement = connection.prepareStatement(SELECT_PEDIDO_MEDIANTE_CLIENTE_ID);
             preparableStatement.setInt(1, cliente.getId());
-            
+
             try (ResultSet resultSet = preparableStatement.executeQuery()) {
-                
-                if (resultSet.next()) { 
-                    pedidos  = getOrdersByCustomerId(cliente);
-                } 
-            } 
-            
+
+                if (resultSet.next()) {
+                    pedidos = getOrdersByCustomerId(cliente);
+                }
+            }
+
         } catch (SQLException e) {
             throw new SQLException(e.getMessage());
         }
-        
+
         return pedidos;
     }
 
     /**
      * 
-     *  MODICAR YA CLIENTE ES NULL
+     * MODICAR YA CLIENTE ES NULL
      * 
      */
-
 
     public List<Pedido> getOrdersByCustomerId(Cliente cliente) throws SQLException {
 
         Connection connection = getConnection();
-        List<Pedido> pedidos  = new ArrayList<>();
+        List<Pedido> pedidos = new ArrayList<>();
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(SELECT_PEDIDO_MEDIANTE_CLIENTE_ID);
@@ -144,8 +156,7 @@ public class JbcPedidoDao implements PedidoDao {
                     EstadoPedido estatadoPedido = EstadoPedido.valueOf(resultSet.getString("pedido.estado_pedido"));
                     Date fecha = resultSet.getDate("pedido.fecha");
 
-                
-                    Pedido pedido = new Pedido(id, estatadoPedido, null, cliente ,null);
+                    Pedido pedido = new Pedido(id, estatadoPedido, null, cliente, null);
                     pedido.setFecha(fecha);
                     List<LineaPedido> listaLineaPedidos = getLineasOrdersByOrder(pedido);
                     pedido.setLineaPedidos(listaLineaPedidos);
@@ -158,27 +169,30 @@ public class JbcPedidoDao implements PedidoDao {
             throw new SQLException(e.getMessage());
         }
 
-        return pedidos ;
+        return pedidos;
     }
 
     /*
      * 
-     *   PREGUNTAL PROFE PARA ESTE METODO   
+     * PREGUNTAL PROFE PARA ESTE METODO
      * 
-     *   MODIFICAR  YA QUE SE PASA UN CLIENTE NULL
-     *  @see
-     *   
+     * MODIFICAR YA QUE SE PASA UN CLIENTE NULL
+     * 
+     * @see
+     * 
      */
 
     @Override
     public List<Pedido> getOrdersByStatus(EstadoPedido estadoPedido, Cliente cliente) throws SQLException {
 
         Connection connection = getConnection();
-        List<Pedido> pedidos  = new ArrayList<>();
+        List<Pedido> pedidos = new ArrayList<>();
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement(SELECT_PEDIDO_MEDIANTE_ESTADO_PEDIDO_NUEVO);
+            PreparedStatement preparedStatement = connection
+                    .prepareStatement(SELECT_PEDIDO_MEDIANTE_ESTADO_PEDIDO_NUEVO);
             preparedStatement.setString(1, estadoPedido.name());
+            preparedStatement.setInt(2, cliente.getId());
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
 
@@ -192,7 +206,7 @@ public class JbcPedidoDao implements PedidoDao {
                     pedido.setFecha(fecha);
                     List<LineaPedido> listaLineaPedidos = getLineasOrdersByOrder(pedido);
                     pedido.setLineaPedidos(listaLineaPedidos);
-                    pedidos .add(pedido);
+                    pedidos.add(pedido);
 
                 }
 
@@ -204,31 +218,24 @@ public class JbcPedidoDao implements PedidoDao {
         return pedidos;
     }
 
+    private void saveOrderLine(LineaPedido lineaPedido, Connection connection, int pedido_id, int producto_id)
+            throws SQLException {
 
-
-    private  void saveOrderLine(LineaPedido lineaPedido, Connection connection, int pedido_id, int producto_id) throws SQLException {
-        
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_LINEA_PEDIDO, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_LINEA_PEDIDO,
+                    Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, lineaPedido.getCantidad());
             preparedStatement.setInt(2, pedido_id);
             preparedStatement.setInt(3, producto_id);
             preparedStatement.execute();
 
         } catch (SQLException e) {
-            
+
             throw new SQLException(e.getMessage());
 
         }
     }
 
-    public Ingrediente saveIngrediente() {
-
-        return null;
-
-    }
-
-    
     /**
      * 
      * MEJORARLO PORQUE HAY COSAS REDUNDANTES
@@ -236,7 +243,6 @@ public class JbcPedidoDao implements PedidoDao {
      * @see
      * 
      */
-
 
     @Override
     public List<LineaPedido> getLineasOrdersByOrder(Pedido pedido) throws SQLException {

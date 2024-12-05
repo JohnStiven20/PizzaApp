@@ -22,6 +22,8 @@ public class Pedido {
     private Cliente cliente;
     private Pagable pagable;
 
+   
+
     public Pedido(int id,EstadoPedido estado, List<LineaPedido> lineaPedidos, Cliente cliente, Pagable pagable) {
         this.id = id;
         this.fecha = new Date();
@@ -40,6 +42,9 @@ public class Pedido {
 
     }
 
+    public void setPagable(Pagable pagable) {
+        this.pagable = pagable;
+    }
 
     public Cliente getCliente() {
         return cliente;

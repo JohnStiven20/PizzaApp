@@ -3,6 +3,7 @@ package app.Controladores.dao.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import static app.Modelo.utils.DatabaseConfPizzeria.SELECT_JOIN_LINEA_PEDIDO_POR
 import static app.Modelo.utils.DatabaseConfPizzeria.SELECT_JOIN_PRODUCTO_INGREDIENTE_POR_ID;
 import static app.Modelo.utils.DatabaseConfPizzeria.SELECT_PRODUCTO_ALL;
 import static app.Modelo.utils.DatabaseConfPizzeria.SELECT_PRODUCTO_MEDIANTE_NOMBRE_Y_SIZE;
+import static app.Modelo.utils.DatabaseConfPizzeria.UPDATE_PRODUCTO;
 import static app.Modelo.utils.DatabaseConfPizzeria.getConnection;
 
 public class JbcProductoDao implements ProductoDao {
@@ -152,138 +154,109 @@ public class JbcProductoDao implements ProductoDao {
             }
 
         } catch (SQLException e) {
-            throw new SQLException(e);
+            throw new SQLException(e.getMessage());
         }
 
     }
 
-    // public int findyByIngredienteAlogenoPorId1(int ingrediente_id, int
-    // alergeno_id, Connection connection) throws SQLException {
-    // // Verificar que la conexión esté abierta
-    // if (connection == null || connection.isClosed()) {
-    // throw new SQLException("La conexión está cerrada o es nula.");
-    // }
-
-    // int id = -1; // Valor predeterminado si no se encuentra nada
-
-    // // Usa try-with-resources para manejar PreparedStatement y ResultSet
-    // try (PreparedStatement preparedStatement =
-    // connection.prepareStatement(SELECT_JOIN_INGREDIENTE_ALOGENO_POR_ID)) {
-    // // Configurar los parámetros de la consulta
-    // preparedStatement.setInt(1, ingrediente_id);
-    // preparedStatement.setInt(2, alergeno_id);
-
-    // // Ejecutar la consulta y procesar el resultado
-    // try (ResultSet resultSet = preparedStatement.executeQuery()) {
-    // if (resultSet.next()) {
-    // id = resultSet.getInt("id"); // Asegúrate de que el nombre de la columna sea
-    // correcto
-    // }
-    // }
-    // } catch (SQLException e) {
-    // System.out.println("¡Viva España! Error en la consulta.");
-    // throw new SQLException("Error al ejecutar findyByIngredienteAlogenoPorId: " +
-    // e.getMessage(), e);
-    // }
-
-    // return id; // Devuelve el ID o -1 si no se encontró
-    // }
-
-    /*
-     * 
-     * 
-     * 
-     * 
-     * 
-     */
-
     @Override
-    public void delete(Producto producto) throws SQLException {
-
-        try (Connection connection = getConnection()) {
-            PreparedStatement preparedStatement = connection.prepareStatement(DELETE_PRODUCTO);
-            preparedStatement.setInt(1, producto.getId());
-        }
-    }
-
-    @Override
-    public void update(Producto producto, String dirrecion, String telefono, String apellidos) throws SQLException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'update'");
-    }
-
-    @Override
-    public void save(Producto producto) throws SQLException {
-        Connection connection = getConnection();
-
-        try (connection) {
-
-            connection.setAutoCommit(true);
-
-            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PRODUCTO, Statement.RETURN_GENERATED_KEYS);
-
-            preparedStatement.setString(1, producto.getNombre());
-            preparedStatement.setDouble(2, producto.getPrecio());
-
-            if (producto instanceof Pizza) {
-                Pizza pizza = ((Pizza) producto);
-                preparedStatement.setString(3, pizza.getSize().toString());
-                preparedStatement.setString(4, "PIZZA");
-            } else if (producto instanceof Pasta) {
-                preparedStatement.setString(3, null);
-                preparedStatement.setString(4, "PASTA");
-
-            } else {
-                Bebida bebida = ((Bebida) producto);
-                preparedStatement.setString(3, bebida.getSize().toString());
-                preparedStatement.setString(4, "BEBIDA");
-            }
-
-            preparedStatement.execute();
-
-            try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    producto.setId(generatedKeys.getInt(1));
-                }
-            }
-
-            if (producto instanceof Pizza) {
-                Pizza pizza = ((Pizza) producto);
-
-                for (int i = 0; i < pizza.getIngredientes().size(); i++) {
-
-                    int ingrediente_id = saveIngrediente(pizza.getIngredientes().get(i),connection);
-                    saveWithProductoIngrediente(producto.getId(), ingrediente_id, connection);
-                }
-
-            } else if (producto instanceof Pasta) {
-                Pasta pasta = ((Pasta) producto);
-
-                for (int i = 0; i < pasta.getIngredientes().size(); i++) {
-                    int ingrediente_id = saveIngrediente(pasta.getIngredientes().get(i),connection);
-                    saveWithProductoIngrediente(producto.getId(), ingrediente_id, connection);
-                }
-            }
-        } catch (SQLException e) {
-            if (connection != null) {
-                connection.rollback();
-                throw new SQLException("Error al guardar save", e);
-            }
-        }
-    }
-
-    public void saveWithProductoIngrediente(int producto_id, int ingrediente_id, Connection connection) throws SQLException {
+public boolean delete(Producto producto) throws SQLException {
+    
+    try (Connection connection = getConnection()) {
+        PreparedStatement preparedStatement = connection.prepareStatement(DELETE_PRODUCTO);
+        preparedStatement.setInt(1, producto.getId());
+        int filasAfectadas = preparedStatement.executeUpdate();
         
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PRODUCTO_INGREDIENTE);
-            preparedStatement.setInt(1, producto_id);
-            preparedStatement.setInt(2, ingrediente_id);
+        return filasAfectadas > 0;
+    } catch (SQLException e) {
+        throw new SQLException(e.getMessage());
+    }
+}
+
+
+    @Override
+    public void update(Producto producto, Size size) throws SQLException {
+        
+        try (Connection connection = getConnection()) {
+            PreparedStatement preparedStatement = connection.prepareStatement(UPDATE_PRODUCTO);
+            preparedStatement.setString(1, size.name());
             preparedStatement.execute();
             
         } catch (SQLException e) {
-            // TODO: handle exception
+            throw new SQLDataException(e.getMessage());
         }
+        
     }
+
+    @Override
+    public boolean save(Producto producto) throws SQLException {
+
+    Connection connection = getConnection();
+
+    boolean estado = findByProductoMedianteNombreYSize(producto, connection);
+
+    // Si el producto ya existe, retornamos false.
+    if (estado) {
+        return false;
+    }
+
+    try (connection) {
+
+        connection.setAutoCommit(false);
+
+        PreparedStatement preparedStatement = connection.prepareStatement(INSERT_PRODUCTO, Statement.RETURN_GENERATED_KEYS);
+
+        preparedStatement.setString(1, producto.getNombre());
+        preparedStatement.setDouble(2, producto.getPrecio());
+
+        if (producto instanceof Pizza) {
+            Pizza pizza = ((Pizza) producto);
+            preparedStatement.setString(3, pizza.getSize().toString());
+            preparedStatement.setString(4, "PIZZA");
+        } else if (producto instanceof Pasta) {
+            preparedStatement.setString(3, null);
+            preparedStatement.setString(4, "PASTA");
+        } else {
+            Bebida bebida = ((Bebida) producto);
+            preparedStatement.setString(3, bebida.getSize().toString());
+            preparedStatement.setString(4, "BEBIDA");
+        }
+
+        preparedStatement.execute();
+
+        try (ResultSet generatedKeys = preparedStatement.getGeneratedKeys()) {
+            if (generatedKeys.next()) {
+                producto.setId(generatedKeys.getInt(1));
+            }
+        }
+
+        if (producto instanceof Pizza) {
+            Pizza pizza = ((Pizza) producto);
+            for (int i = 0; i < pizza.getIngredientes().size(); i++) {
+                int ingrediente_id = saveIngrediente(pizza.getIngredientes().get(i), connection);
+                saveWithProductoIngrediente(producto.getId(), ingrediente_id, connection);
+            }
+        } else if (producto instanceof Pasta) {
+            Pasta pasta = ((Pasta) producto);
+            for (int i = 0; i < pasta.getIngredientes().size(); i++) {
+                int ingrediente_id = saveIngrediente(pasta.getIngredientes().get(i), connection);
+                saveWithProductoIngrediente(producto.getId(), ingrediente_id, connection);
+            }
+        } else if (producto instanceof Bebida) {
+            connection.commit();
+        }
+
+        connection.commit();
+        return true;
+
+    } catch (SQLException e) {
+        if (connection != null) {
+            connection.rollback();
+        }
+        throw new SQLException(e.getMessage());
+    }
+}
+
 
     @Override
     public List<Producto> getAllProducts() throws SQLException {
@@ -308,7 +281,7 @@ public class JbcProductoDao implements ProductoDao {
 
                         Pizza pizza = new Pizza(id, nombre, precio, size, null);
 
-                        List<Ingrediente> listaIngredientes = getIngredientsByProduct(pizza);
+                        List<Ingrediente> listaIngredientes = findByProduct(pizza);
 
                         pizza.setIngredientes(listaIngredientes);
                         listaProductos.add(pizza);
@@ -320,7 +293,7 @@ public class JbcProductoDao implements ProductoDao {
                         double precio = resultSet.getDouble("producto.precio");
 
                         Pasta pasta = new Pasta(id, null, nombre, precio);
-                        List<Ingrediente> listaIngredientes = getIngredientsByProduct(pasta);
+                        List<Ingrediente> listaIngredientes = findByProduct(pasta);
                         pasta.setIngredientes(listaIngredientes);
                         listaProductos.add(pasta);
 
@@ -374,7 +347,7 @@ public class JbcProductoDao implements ProductoDao {
 
                         Pizza pizza = new Pizza(id, nombre, precio, size, null);
 
-                        List<Ingrediente> listaIngredientes = getIngredientsByProduct(pizza);
+                        List<Ingrediente> listaIngredientes = findByProduct(pizza);
                         pizza.setIngredientes(listaIngredientes);
                         LineaPedido lineaPedido = new LineaPedido(linea_pedido_id, cantidad, pizza);
                         lista.add(lineaPedido);
@@ -386,7 +359,7 @@ public class JbcProductoDao implements ProductoDao {
                         double precio = resultSet.getDouble("producto.precio");
 
                         Pasta pasta = new Pasta(id, null, nombre, precio);
-                        List<Ingrediente> listaIngredientes = getIngredientsByProduct(pasta);
+                        List<Ingrediente> listaIngredientes = findByProduct(pasta);
                         pasta.setIngredientes(listaIngredientes);
                         LineaPedido lineaPedido = new LineaPedido(linea_pedido_id, cantidad, pasta);
                         lista.add(lineaPedido);
@@ -402,9 +375,7 @@ public class JbcProductoDao implements ProductoDao {
                         lista.add(lineaPedido);
 
                     }
-
                 }
-
             }
 
         } catch (SQLException e) {
@@ -416,8 +387,9 @@ public class JbcProductoDao implements ProductoDao {
 
     }
 
+
     @Override
-    public List<Ingrediente> getIngredientsByProduct(Producto producto) throws SQLException {
+    public List<Ingrediente> findByProduct(Producto producto) throws SQLException {
 
         List<Ingrediente> listaIngredientes = new ArrayList<>();
 
@@ -433,41 +405,19 @@ public class JbcProductoDao implements ProductoDao {
                     int id = resultSet.getInt("id");
                     String nombre = resultSet.getString("nombre");
                     Ingrediente ingrediente = new Ingrediente(id, nombre, null);
-                    List<String> listaAlogenos = getAlergonosbyIngredient(ingrediente);
+                    List<String> listaAlogenos = findbyIngrediente(ingrediente);
                     ingrediente.setAlergenos(listaAlogenos);
                     listaIngredientes.add(ingrediente);
 
                 }
-
             }
-
         }
 
         return listaIngredientes;
     }
 
-    public int findProducto(Producto producto) {
-
-        try (Connection connection = getConnection()) {
-
-            PreparedStatement preparedStatement = connection.prepareStatement(SELECT_PRODUCTO_MEDIANTE_NOMBRE_Y_SIZE);
-            preparedStatement.setString(1, DELETE_PRODUCTO);
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
-
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-
-        return 0;
-    }
-
     @Override
-    public List<String> getAlergonosbyIngredient(Ingrediente ingrediente) throws SQLException {
+    public List<String> findbyIngrediente(Ingrediente ingrediente) throws SQLException {
         List<String> lista = new ArrayList<>();
 
         try (Connection connection = getConnection()) {
@@ -485,128 +435,115 @@ public class JbcProductoDao implements ProductoDao {
         return lista;
     }
 
-    public int findbyNameIngrediente(Ingrediente ingrediente, Connection connection) {
-
-        int id = 0;
+    public void saveWithProductoIngrediente(int producto_id, int ingrediente_id, Connection connection) throws SQLException {
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement(SELECT_INGREDIENTE_MEDIANTE_NOMBRE);
-            preparedStatement.setString(1, ingrediente.getNombre());
-
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-
-                id = resultSet.getInt("ingrediente.id");
-
-            } catch (Exception e) {
-
-            }
+            PreparedStatement preparableStatement = connection.prepareStatement(INSERT_PRODUCTO_INGREDIENTE,Statement.RETURN_GENERATED_KEYS);
+            preparableStatement.setInt(1, producto_id);
+            preparableStatement.setInt(2, ingrediente_id);
+            preparableStatement.execute();
+            connection.commit();
 
         } catch (SQLException e) {
+            if (connection != null) {
+                connection.rollback();
+                throw new SQLException("Error al guardar saveProductoIngrediente", e);
+            }
 
         }
-
-        if (id > 0) {
-            return -1;
-        } else {
-            return id;
-        }
-
     }
 
+    public void saveWithIngredienteAlogeno(int ingrediente_id, int alogeno_id, Connection connection)
+            throws SQLException {
+
+        int hola = findyByIngredienteAlogenoPorId(ingrediente_id, alogeno_id, connection);
+
+        if (hola == -1) {
+
+            try {
+
+                PreparedStatement preparedStatement = connection.prepareStatement(INSERT_INGREDIENTE_ALOGENO, Statement.RETURN_GENERATED_KEYS);
+
+                preparedStatement.setInt(1, ingrediente_id);
+                preparedStatement.setInt(2, alogeno_id);
+                preparedStatement.execute();
+
+            } catch (SQLException e) {
+                if (connection != null) {
+                    connection.rollback();
+                    throw new SQLException("Error al guardar saveWithIngredienteAlogenos ", e);
+                }
+            }
+
+        }
+    }
 
     public int saveIngrediente(Ingrediente ingrediente, Connection connection) throws SQLException {
 
-        int id = findbyNameIngrediente(ingrediente, connection);
-
-        if (id != -1) {
-            try {
-                PreparedStatement preparedStatement = connection.prepareStatement(INSERT_INGREDIENTE,Statement.RETURN_GENERATED_KEYS);
-                preparedStatement.setString(1, ingrediente.getNombre());
-    
-                try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
-                    id = resultSet.getInt(1);
-                } catch (Exception e) {
-    
-                }
-    
-                for (int i = 0; i < ingrediente.getAlergenos().size(); i++) {
-                    int alergeno_id = saveAlergeno(ingrediente.getAlergenos().get(i), connection);
-                    savewithIngredienteAlergeno(id, alergeno_id, connection);
-                }
-    
-            } catch (SQLException e) {
-    
-            }
-        }
-
-        return id;
-
-    }
-
-    public void savewithIngredienteAlergeno(int ingrediente_id, int alergeno_id, Connection connection)throws SQLException {
-
-        try {
-
-            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_INGREDIENTE_ALOGENO);
-            preparedStatement.setInt(1, ingrediente_id);
-            preparedStatement.setInt(2, alergeno_id);
-            preparedStatement.execute();
-
-        } catch (SQLException e) {
-
-        }
-    }
-
-    public int saveAlergeno(String alogeno, Connection connection) throws SQLException {
-
-        int id = findbyNameAlergeno(alogeno, connection);
-
-        if (id != -1) {
-            try {
-                PreparedStatement preparedStatement = connection.prepareStatement(INSERT_ALOGENO, Statement.RETURN_GENERATED_KEYS);
-                preparedStatement.setString(1, alogeno);
-
-                try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
-                    id = resultSet.getInt(1);
-                } catch (Exception e) {
-
-                }
-
-
-            } catch (SQLException e) {
-
-            }
-        }
-
-        return id;
-
-    }
-
-    public int findbyNameAlergeno(String nombre, Connection connection) throws SQLException {
-
         int id = 0;
 
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(SELECT_ALOGENO_MEDIANTE_NOMBRE);
-            preparedStatement.setString(1, nombre);
+        int ingrediente_id = findByIngredientePorNombre(ingrediente.getNombre(), connection);
 
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-
-                id = resultSet.getInt("alogeno.id");
-
-            } catch (Exception e) {
-
-            }
-
-        } catch (SQLException e) {
-
+        if (ingrediente_id != -1) {
+            return ingrediente_id;
         }
 
-        if (id > 0) {
-            return -1;
-        } else {
+        try {
+
+            PreparedStatement preparedStatement = connection.prepareStatement(INSERT_INGREDIENTE, Statement.RETURN_GENERATED_KEYS);
+            preparedStatement.setString(1, ingrediente.getNombre());
+            preparedStatement.execute();
+
+            try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
+                while (resultSet.next()) {
+                    id = resultSet.getInt(1);
+                }
+            }
+
+            if (ingrediente.getAlergenos() != null ) {
+                for (int i = 0; i < ingrediente.getAlergenos().size(); i++) {
+                    int alogeno_id = saveAlogeno(ingrediente.getAlergenos().get(i), connection);
+                    saveWithIngredienteAlogeno(id, alogeno_id, connection);
+                }
+            }
+
             return id;
+
+        } catch (SQLException e) {
+            connection.rollback();
+            throw new SQLException("Error al guardar saveProductoIngrediente", e);
+
         }
     }
 
-}
+    public int saveAlogeno(String alogeno, Connection getConnection) throws SQLException {
+
+        int id = 0;
+        int alogeno_id = findByAlergenoPorNombre(alogeno, getConnection);
+
+        if (alogeno_id != -1) {
+            return alogeno_id;
+        }
+
+        try {
+
+            PreparedStatement preparedStatement = getConnection.prepareStatement(INSERT_ALOGENO, Statement.RETURN_GENERATED_KEYS);
+
+            preparedStatement.setString(1, alogeno);
+            preparedStatement.execute();
+
+            try (ResultSet resultSet = preparedStatement.getGeneratedKeys()) {
+                if (resultSet.next()) {
+                    id = resultSet.getInt(1);
+                }
+            }
+
+        } catch (SQLException e) {
+            getConnection.rollback();
+            throw new SQLException(e.getMessage());
+        }
+
+        return id;
+    }  
+
+}              

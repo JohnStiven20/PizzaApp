@@ -11,7 +11,7 @@ public interface ClienteDao {
 
     void update(Cliente cliente, String dirrecion, String telefono, String apellidos) throws SQLException;
 
-    void save(Cliente cliente) throws SQLException;
+    boolean save(Cliente cliente) throws SQLException;
 
     Cliente getClienteByEmail(String gmail) throws SQLException;
 
