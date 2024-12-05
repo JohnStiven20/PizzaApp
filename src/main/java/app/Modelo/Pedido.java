@@ -1,8 +1,9 @@
 package app.Modelo;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+
+import app.Interfaces.Pagable;
 
 
 /**
@@ -10,30 +11,50 @@ import java.util.List;
  */
 public class Pedido {
 
-
     public enum EstadoPedido {
         PEDIENTE, ENTREGADO, CANCELADO
     }
 
-    private final int id;
+    private int id;
     private Date fecha;
-    private float precioTotal;
     private EstadoPedido estado;
-    private static int contador = 1;
     private List<LineaPedido> lineaPedidos;
     private Cliente cliente;
+    private Pagable pagable;
 
-    public Pedido(EstadoPedido estado) {
-        this.id = contador;
+    public Pedido(int id,EstadoPedido estado, List<LineaPedido> lineaPedidos, Cliente cliente, Pagable pagable) {
+        this.id = id;
         this.fecha = new Date();
         this.estado = estado;
-        this.lineaPedidos = new ArrayList<>();
-        this.precioTotal = 0;
+        this.lineaPedidos = lineaPedidos;
+        this.cliente = cliente;
+        this.pagable = pagable;
     }
 
-    public void agregarLineaPedido(LineaPedido lineaPedido) {
-        lineaPedidos.add(lineaPedido);
-        this.precioTotal = (float) lineaPedidos.stream().mapToDouble(x -> x.getCantidad() * x.getProducto().getPrecio()).sum();
+    public Pedido(EstadoPedido estado, List<LineaPedido> lineaPedidos, Cliente cliente, Pagable pagable) {
+        this.fecha = new Date();
+        this.estado = estado;
+        this.lineaPedidos = lineaPedidos;
+        this.cliente = cliente;
+        this.pagable = pagable;
+
+    }
+
+
+    public Cliente getCliente() {
+        return cliente;
+    }
+
+    public void setCliente(Cliente cliente) {
+        this.cliente = cliente;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setLineaPedidos(List<LineaPedido> lineaPedidos) {
+        this.lineaPedidos = lineaPedidos;
     }
 
     public List<LineaPedido> getLineaPedidos() {
@@ -48,14 +69,6 @@ public class Pedido {
         this.fecha = fecha;
     }
 
-    public float getPrecioTotal() {
-        return precioTotal;
-    }
-
-    public void setPrecioTotal(float precioTotal) {
-        this.precioTotal = precioTotal;
-    }
-
     public EstadoPedido getEstado() {
         return estado;
     }
@@ -64,9 +77,25 @@ public class Pedido {
         this.estado = estado;
     }
 
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public Pagable getPagable() {
+        return pagable;
+    }
+    
     @Override
     public String toString() {
-        return "Pedido [id=" + id + ", fecha=" + fecha + ", precioTotal=" + precioTotal + ", estado=" + estado + "]";
+        StringBuilder sb = new StringBuilder();
+        sb.append("Pedido{");
+        sb.append("id=").append(id);
+        sb.append(", fecha=").append(fecha);
+        sb.append(", estado=").append(estado);
+        sb.append(", lineaPedidos=").append(lineaPedidos);
+        sb.append('}');
+        return sb.toString();
     }
+
 
 }

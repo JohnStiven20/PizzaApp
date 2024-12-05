@@ -9,8 +9,10 @@ import com.opencsv.bean.CsvBindByName;
 /**
  * Ingrediente
  */
-public class Ingrediente {
 
+ public class Ingrediente {
+
+    private int id;
     @CsvBindByName(column = "NOMBRE", required = true)
     private String nombre;
 
@@ -18,10 +20,15 @@ public class Ingrediente {
     private List<String> alergenos = new ArrayList<>();
 
     public Ingrediente(String nombre, List<String> alergenos) {
-        
         this.nombre = nombre;
         this.alergenos = alergenos;
-    
+    }
+
+
+    public Ingrediente(int id, String nombre, List<String> alergenos) {
+        this.id = id;
+        this.nombre = nombre;
+        this.alergenos = alergenos;
     }
 
     public Ingrediente() {
@@ -45,10 +52,19 @@ public class Ingrediente {
 
     @Override
     public String toString() {
-
-        alergenos.forEach(x -> System.out.println(x));
-
         return "Ingrediente [nombre=" + nombre + ", alergenos=" + alergenos + "]";
+    }
+
+
+
+    public int getId() {
+        return id;
+    }
+
+
+
+    public void setId(int id) {
+        this.id = id;
     }
 
 }

@@ -1,7 +1,13 @@
 package app.Controladores;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import app.Controladores.dao.PedidoDao;
+import app.Controladores.dao.impl.JbcPedidoDao;
+import app.Interfaces.Pagable;
 import app.Modelo.Cliente;
-import app.Modelo.Interfaces.Pagable;
 import app.Modelo.LineaPedido;
 import app.Modelo.Pedido;
 import app.Modelo.Pedido.EstadoPedido;
@@ -9,86 +15,61 @@ import app.Modelo.Producto;
 
 public class ContraladorPedido {
 
-    private static Pedido pedido;
-    private static Cliente cliente;
+    private final PedidoDao pedidoDao;
 
-    public ContraladorPedido(Cliente usuario) {
-        cliente = usuario;
+    public ContraladorPedido() {
+        pedidoDao = new JbcPedidoDao();
     }
 
-    public void finalizarPedido(Pagable pagable) throws Exception {
-        if (cliente != null) {
-            if (pedido != null) {
-                pedido.setEstado(EstadoPedido.ENTREGADO);
-                System.out.println(pedido.getEstado());
-                pagable.pagar(pedido.getPrecioTotal());
-            } else {
-                throw new Exception("No hay pedido");
-            }
+    public void save(Pedido pedido) throws SQLException {
+        pedidoDao.save(pedido);
+    }
+
+    public void getLineasOrdersByOrder(Pedido pedido) throws SQLException {
+        pedidoDao.getLineasOrdersByOrder(pedido).forEach(x -> System.out.println(x));
+    }
+
+    public List<Pedido> getOrdersByStatus(Pedido.EstadoPedido estadoPedido, Cliente cliente) throws SQLException {
+        return pedidoDao.getOrdersByStatus(estadoPedido, cliente);
+    }
+
+    public List<Pedido> getOrdersByCustumer(Cliente cliente) throws SQLException {
+        return pedidoDao.getOrdersByCustumer(cliente);
+    }
+
+    public void addOrderLine(int cantidad ,Producto producto, Pedido pedido) throws SQLException {
+        pedidoDao.addOrderLine(cantidad, producto, pedido);
+    }
+
+    public void addCarrito(Producto producto,int cantidad , Cliente cliente) throws SQLException {
+
+        ArrayList<LineaPedido> lisatLineaPedidos = new ArrayList<>();
+        List<Pedido> listaPedidos = pedidoDao.getOrdersByStatus(EstadoPedido.PEDIENTE, cliente);
+        Pedido pedidoNuevo = listaPedidos.stream().findFirst().orElse(null);
+
+        if (pedidoNuevo != null) {
+            addOrderLine(cantidad, producto, pedidoNuevo);           
         } else {
-            throw new Exception("No hay usuario o se ha deslogeado");
+            LineaPedido lineaPedido = new LineaPedido(cantidad, producto);
+            lisatLineaPedidos.add(lineaPedido);
+            pedidoNuevo = new Pedido(EstadoPedido.PEDIENTE, lisatLineaPedidos, cliente, null);
+            pedidoDao.save(pedidoNuevo);
         }
     }
 
-    public void entregarPedido() throws Exception {
-        if (cliente != null) {
-            if (pedido != null) {
-                pedido.setEstado(EstadoPedido.ENTREGADO);
-                System.out.println(pedido.getEstado());
-            } else {
-                throw new Exception("No hay pedido");
-            }
-        } else {
-            throw new Exception("No hay usuario o se ha deslogeado");
-
-        }
+    public void finalizarPedido(Pagable metodoPago, Cliente cliente) throws SQLException {
+        Pedido pedido = pedidoDao.getOrdersByStatus(EstadoPedido.PEDIENTE, cliente).stream().findFirst().get();
+        pedido.setEstado(EstadoPedido.ENTREGADO);
+        pedidoDao.update(pedido, EstadoPedido.ENTREGADO, metodoPago);
     }
 
-    public void cancelarPedido() throws Exception {
-
-        if (cliente != null) {
-            if (pedido != null) {
-                pedido.setEstado(EstadoPedido.CANCELADO);
-                System.out.println(pedido.getEstado());
-            } else {
-                throw new Exception("No hay pedido");
-            }
-        } else {
-            throw new Exception("No hay usuario o se ha deslogeado");
-        }
+    public void cancelarPedido(Cliente cliente) throws SQLException {
+        Pedido pedido = pedidoDao.getOrdersByStatus(EstadoPedido.PEDIENTE, cliente).stream().findFirst().get();
+        pedidoDao.update(pedido, EstadoPedido.CANCELADO, null);
     }
 
-    public void agregarLineaPedido(int cantidad, Producto producto) throws Exception {
-
-        if (cliente != null) {
-            if (pedido == null) {
-                pedido = new Pedido(EstadoPedido.PEDIENTE);
-                pedido.agregarLineaPedido(new LineaPedido(cantidad, producto));
-
-            } else {
-                throw new Exception("No hay pedido");
-            }
-        } else {
-            throw new Exception("No hay usuario o se ha deslogeado");
-        }
+    public void entregarPedido(int pedido_id) throws SQLException {
+        Pedido pedido = new Pedido(pedido_id, null, null, null, null);
+        pedidoDao.update(pedido, EstadoPedido.ENTREGADO, null);
     }
-
-    public void recorrerListaLineasPedidos() throws Exception {
-
-        if (cliente != null) {
-            if (pedido != null) {
-                pedido.getLineaPedidos().forEach(lineas -> System.out.println(lineas));
-            } else {
-                throw new Exception("No hay pedido");
-            }
-        } else {
-            throw new Exception("No hay usuario o se ha deslogeado");
-
-        }
-    }
-
-    public Pedido getPedido() {
-        return pedido;
-    }
-
 }

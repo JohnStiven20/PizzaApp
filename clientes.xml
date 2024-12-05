@@ -8,7 +8,6 @@
         <password>password123</password>
         <admin>false</admin>
         <direccion>Calle Falsa 123</direccion>
-        
     </cliente>
     <cliente id="2">
         <dni>87654321B</dni>

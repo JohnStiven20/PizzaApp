@@ -1,6 +1,6 @@
 package app.Modelo;
 
-import app.Modelo.Enums.Size;
+import app.Enums.Size;
 
 public class Bebida extends Producto {
 
@@ -8,6 +8,11 @@ public class Bebida extends Producto {
 
     public Bebida(String nombre, double precio, Size size) {
         super(nombre, precio);
+        this.size = size;
+    }
+
+    public Bebida(int id, String nombre, double precio, Size size) {
+        super(id, nombre, precio);
         this.size = size;
     }
 
@@ -21,7 +26,7 @@ public class Bebida extends Producto {
 
     @Override
     public String toString() {
-        return "Bebida [size=" + size + "]";
+        return super.toString() + " Bebida [size=" + size + "]";
     }
 
 }

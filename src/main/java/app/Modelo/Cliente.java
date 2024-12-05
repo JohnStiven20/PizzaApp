@@ -6,8 +6,10 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
-import app.Modelo.Interfaces.Pagable;
+import app.Interfaces.Pagable;
+
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
@@ -20,12 +22,15 @@ public class Cliente implements  Pagable {
     private String telefono;
     private String email;
     private String password;
-    private List<Pedido> listaPedidos;
     private Boolean admin;
     private String direccion;
+    private String apellidos;
+    @XmlTransient
+    private List<Pedido> listaPedidos;
 
-    public Cliente(int id, String dni, String nombre, String telefono, String email,String direccion , String password, List<Pedido> listaPedidos, Boolean admin) {
-        this.id = id;
+    
+
+    public Cliente(String dni, String nombre, String telefono, String email,String direccion , String password, List<Pedido> listaPedidos, Boolean admin, String apellidos) {
         this.dni = dni;
         this.nombre = nombre;
         this.telefono = telefono;
@@ -34,9 +39,21 @@ public class Cliente implements  Pagable {
         this.listaPedidos = listaPedidos;
         this.admin = admin;
         this.direccion = direccion;
+        this.apellidos = apellidos;    
     }
 
-    
+    public Cliente(int id, String dni, String nombre, String telefono, String email,String direccion , String password, List<Pedido> listaPedidos, Boolean admin, String apellidos) {
+        this.dni = dni;
+        this.nombre = nombre;
+        this.telefono = telefono;
+        this.email = email;
+        this.password = password;
+        this.listaPedidos = listaPedidos;
+        this.admin = admin;
+        this.direccion = direccion;
+        this.apellidos = apellidos;
+        this.id = id;   
+    }
 
     public Cliente(int id, String dni, String nombre, String telefono, String email, String password,List<Pedido> listaPedidos, String direccion) {
         this.id = id;
@@ -50,12 +67,10 @@ public class Cliente implements  Pagable {
         this.admin = false;
     }
 
-
-
+    
     public Cliente() {
     }
 
-    
     public int getId() {
         return id;
     }
@@ -128,5 +143,29 @@ public class Cliente implements  Pagable {
     public String getDireccion() {
         return direccion;
     }
+
+
+
+    public String getApellidos() {
+        return apellidos;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setAdmin(Boolean admin) {
+        this.admin = admin;
+    }
+
+    public void setDireccion(String direccion) {
+        this.direccion = direccion;
+    }
+
+    public void setApellidos(String apellidos) {
+        this.apellidos = apellidos;
+    }
+
+    
 
 }

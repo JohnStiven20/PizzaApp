@@ -2,20 +2,21 @@ package app.Modelo;
 
 import java.util.List;
 
-import app.Modelo.Enums.Size;
+import app.Enums.Size;
 
-
-/**
- * Pizza
- */
 public class Pizza  extends Producto{
 
     private Size size;
     private List<Ingrediente> listaIngredientes;
     
-
     public Pizza(String nombre, double precio, Size size, List<Ingrediente> listaIngredientes) {
         super(nombre, precio);
+        this.size = size;
+        this.listaIngredientes = listaIngredientes;
+    }
+
+    public Pizza(int id, String nombre, double precio, Size size, List<Ingrediente> listaIngredientes) {
+        super(id, nombre, precio);
         this.size = size;
         this.listaIngredientes = listaIngredientes;
     }
@@ -38,9 +39,8 @@ public class Pizza  extends Producto{
 
     @Override
     public String toString() {
-        return "Pizza [size=" + size + ", listaIngredientes=" + listaIngredientes + "]";
+        return super.toString() + " Pizza [size=" + size + ", listaIngredientes=" + listaIngredientes + "]";
     }
 
    
-
 }
